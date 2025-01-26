@@ -1,8 +1,6 @@
 from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 import os 
-import shutil
-
 
 
 # Awal haja hia nakhdo data so ghanst3mlo os library bach n retrieviw classes mn dir li kayna fl path
