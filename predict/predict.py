@@ -18,13 +18,9 @@ model.eval()
 
 
 def predict_image(img, model):
-    # Convert to a batch of 1
     xb = to_device(img.unsqueeze(0), device)
-    # Get predictions from model
     yb = model(xb)
-    # Pick index with highest probability
     prob, preds  = torch.max(yb, dim=1)
-    # Retrieve the class label
     return dataset.classes[preds[0].item()]
 
 

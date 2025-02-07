@@ -1,45 +1,73 @@
 import serial
 import cv2
 import torch
+import time
 from PIL import Image
-
 from predict.predict import predict_image
 from modelArchitecture import ResNet
 from dataset.data_prepation import transformations
 
-ser = serial.Serial('COM6', 9600, timeout=1)  
+class MultiArduinoController:
+    def __init__(self, ports, baud_rate=9600, model_path='modelparam.pth', detection_interval=5):
+        self.serial_connections = {
+            "plastic": serial.Serial(ports["plastic"], baud_rate, timeout=1),
+            "cardboard": serial.Serial(ports["cardboard"], baud_rate, timeout=1),
+            "clothes": serial.Serial(ports["clothes"], baud_rate, timeout=1),
+        }
 
-model = ResNet()
-model.load_state_dict(torch.load('modelparam.pth', weights_only=True))
-model.eval()
+        self.model = ResNet()
+        self.model.load_state_dict(torch.load(model_path, weights_only=True))
+        self.model.eval()
 
-cap = cv2.VideoCapture(0)
+        self.detection_interval = detection_interval
+        self.last_detection_time = 0
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    def send_to_arduino(self, label):
+        if label in self.serial_connections:
+            print(f"Sending '{label}' to Arduino...")
+            self.serial_connections[label].write((label + "\n").encode())
+        else:
+            print(f"Label '{label}' is invalid or not connected to any Arduino.")
 
-    pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-    processed_image = transformations(pil_image)
+    def process_frame(self, frame):
+        pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        processed_image = transformations(pil_image)
 
-    prediction = predict_image(processed_image, model)
+        prediction = predict_image(processed_image, self.model)
+        cv2.putText(frame, f'Predicted: {prediction}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-    cv2.putText(frame, f'Predicted: {prediction}', 
-                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                1, (0, 255, 0), 2)
+        return frame, prediction
 
-    ser.write((prediction + "\n").encode())  
+    def run(self):
+        cap = cv2.VideoCapture(0)  
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-    if ser.in_waiting > 0:  
-        received_data = ser.readline().decode().strip()  
-        print(f"Data received from Arduino: {received_data}")  
+                processed_frame, prediction = self.process_frame(frame)
 
-    cv2.imshow('Object Classification', frame)
+                current_time = time.time()
+                if current_time - self.last_detection_time > self.detection_interval:
+                    self.send_to_arduino(prediction)
+                    self.last_detection_time = current_time
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+                cv2.imshow('Object Classification', processed_frame)
 
-cap.release()
-cv2.destroyAllWindows()
-ser.close()
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+        finally:
+            cap.release()
+            cv2.destroyAllWindows()
+            for connection in self.serial_connections.values():
+                connection.close()
+
+if __name__ == '__main__':
+    ports = {
+        "plastic": "COM7",  
+        "cardboard": "COM5",
+        "clothes": "COM8",
+    }
+    controller = MultiArduinoController(ports)
+    controller.run()

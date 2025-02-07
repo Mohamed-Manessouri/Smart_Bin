@@ -11,13 +11,6 @@ classes = os.listdir(path)
 print(classes)
 
 
-clothes_dir = "C:/Users/moham/Dokument/Club/Formation/Smart_Bin/dataset/GarbageClassification/clothes"
-
-clothes_files = sorted([f for f in os.listdir(clothes_dir) if f.startswith("clothes")])
-
-
-print(f"Number of images in the 'clothes' directory: {len(clothes_files)}")
-
 
 #tani haja khas ga3 tsawr ykouno b le même format w moraha nrj3ohom tensors(vectors) bach model y9dr ytrini 3la des valeur num)
 
