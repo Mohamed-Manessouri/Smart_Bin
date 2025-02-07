@@ -13,7 +13,7 @@ Automated bin operation with Arduino Uno and servo motors.
 Hands-free waste sorting using serial communication between the AI model and Arduino boards.
 * 🛠️ How It Works
 1. AI Classification
-The AI model processes an image or video feed to classify the object as either Clothes, Plastic, or Cardboard.
+The resnet50 pretrained model processes an image or video feed to classify the object as either Clothes, Plastic, or Cardboard.
 The classification result (e.g., plastic, cardboard) is sent to the corresponding Arduino Uno via serial communication.
 2. Arduino Control
 Each Arduino controls a servo motor attached to its bin.
@@ -30,4 +30,9 @@ Camera or device for object detection.
 Computer to run the AI model.
 Software Requirements
 Arduino IDE.
-Python (with libraries like TensorFlow, OpenCV, and PySerial).
+Python (pytorch, OpenCV, and PySerial).
+
+
+* 🚀 How to run
+1) Upload the 3 .ino files in each arduino board.
+2) Run the streamandsend.py on you local machine.
